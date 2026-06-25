@@ -25,6 +25,9 @@ venv/
 # Mathdoc output
 *.pdf
 
+# Node
+node_modules/
+
 # macOS/SMB-Artefakte
 .smbdelete*
 .DS_Store

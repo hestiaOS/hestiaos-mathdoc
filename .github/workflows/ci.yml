@@ -1,4 +1,4 @@
-name: CI — Mathdoc Pipeline
+name: CI -- Mathdoc Pipeline
 
 on:
   push:
@@ -55,3 +55,12 @@ jobs:
 
       - name: Check for tracked .pyc files
         run: git ls-files | grep -E '\.pyc$' || echo "No tracked .pyc files"
+
+      - name: Check for bidi control characters in workflow
+        run: |
+          if grep -Pn '[\x{200E}\x{200F}\x{202A}\x{202B}\x{202C}\x{202D}\x{202E}\x{2066}\x{2067}\x{2068}\x{2069}]' .github/workflows/ci.yml; then
+            echo "ERROR: Bidi control characters found in workflow file"
+            exit 1
+          else
+            echo "No bidi control characters detected"
+          fi

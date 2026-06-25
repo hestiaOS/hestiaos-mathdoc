@@ -57,14 +57,4 @@ jobs:
         run: git ls-files | grep -E '\.pyc$' || echo "No tracked .pyc files"
 
       - name: Check for hidden/bidi Unicode in workflow
-        shell: python3
-        run: |
-          import sys
-          BIDI = {0x200E, 0x200F} | set(range(0x202A, 0x202F)) | set(range(0x2066, 0x206A))
-          with open('.github/workflows/ci.yml', 'rb') as f:
-              data = f.read()
-          for i, b in enumerate(data, 1):
-              if b in BIDI:
-                  print(f'BIDI character U+{b:04X} at byte offset {i}')
-                  sys.exit(1)
-          print('No hidden/bidi Unicode characters found')
+        run: python3 -c "import sys; B={0x200E,0x200F}|set(range(0x202A,0x202F))|set(range(0x2066,0x206A)); d=open('.github/workflows/ci.yml','rb').read(); [print(f'BIDI U+{b:04X} at byte {i}') or sys.exit(1) for i,b in enumerate(d,1) if b in B]; print('No hidden/bidi Unicode characters found')"

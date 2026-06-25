@@ -37,7 +37,7 @@ try {
   const { AllPackages } = require("mathjax-full/js/input/tex/AllPackages.js");
 
   tex = new TeX({ packages: AllPackages.slice() });
-  svg = new SVG({ fontCache: "local" });
+  svg = new SVG({ fontCache: "none" });
   doc = mathjax.document("", { InputJax: tex, OutputJax: svg });
 } catch (e) {
   console.error("MathJax initialization failed: " + e.message);

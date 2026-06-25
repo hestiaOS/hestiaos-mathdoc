@@ -123,6 +123,29 @@ class TestBasicRendering:
         assert proc.returncode != 0
 
 
+class TestFontCacheMode:
+    """Proof that fontCache:none is intentional (self-contained SVG)."""
+
+    def test_font_cache_is_none(self):
+        """render_math.cjs must use fontCache:none so each SVG is
+        self-contained (no shared defs/xlink:href references)."""
+        import re
+        with open(RENDER_SCRIPT, "r") as f:
+            src = f.read()
+        # Assert the exact setting exists in source
+        assert 'fontCache: "none"' in src, (
+            "fontCache must be 'none' for self-contained PDF output"
+        )
+
+    def test_no_xlink_href_in_rendered_svg(self):
+        """SVG output with fontCache:none has no xlink:href references."""
+        result = render_html("<p>$a$ and $b$</p>")
+        # xlink:href would appear if shared font cache were used
+        assert 'xlink:href' not in result, (
+            "fontCache:none should produce inline paths, not xlink references"
+        )
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # HTML-aware protection: literal preservation in code/pre blocks
 # ══════════════════════════════════════════════════════════════════════════

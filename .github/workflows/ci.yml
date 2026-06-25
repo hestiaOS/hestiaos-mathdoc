@@ -56,11 +56,15 @@ jobs:
       - name: Check for tracked .pyc files
         run: git ls-files | grep -E '\.pyc$' || echo "No tracked .pyc files"
 
-      - name: Check for bidi control characters in workflow
+      - name: Check for hidden/bidi Unicode in workflow
+        shell: python3
         run: |
-          if grep -Pn '[\x{200E}\x{200F}\x{202A}\x{202B}\x{202C}\x{202D}\x{202E}\x{2066}\x{2067}\x{2068}\x{2069}]' .github/workflows/ci.yml; then
-            echo "ERROR: Bidi control characters found in workflow file"
-            exit 1
-          else
-            echo "No bidi control characters detected"
-          fi
+          import sys
+          BIDI = {0x200E, 0x200F} | set(range(0x202A, 0x202F)) | set(range(0x2066, 0x206A))
+          with open('.github/workflows/ci.yml', 'rb') as f:
+              data = f.read()
+          for i, b in enumerate(data, 1):
+              if b in BIDI:
+                  print(f'BIDI character U+{b:04X} at byte offset {i}')
+                  sys.exit(1)
+          print('No hidden/bidi Unicode characters found')

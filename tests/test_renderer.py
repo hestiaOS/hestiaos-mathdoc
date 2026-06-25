@@ -303,24 +303,37 @@ class TestStdoutStderrContract:
 
     def test_missing_mathjax_writes_no_stdout(self):
         """When mathjax-full cannot be loaded, stdout is empty and stderr
-        is non-empty (unhappy-path: run with NODE_PATH that excludes
-        node_modules)."""
-        env = os.environ.copy()
-        # Clear NODE_PATH so modules aren't found, and ensure we can't
-        # resolve mathjax-full from the script directory
-        env.pop("NODE_PATH", None)
-        # We can't run without modules easily, so skip if mathjax is
-        # actually installed (the normal happy path).
-        # Instead test that a truly missing-module scenario produces
-        # no stdout and non-empty stderr.
-        if not HAS_MATHJAX:
-            stdout, stderr, code = render_with_stderr("<p>$a$</p>")
-            assert stdout == "" or stdout.strip() == ""
-            assert len(stderr) > 0
-        else:
-            # mathjax IS installed — verify the success path contract.
-            # For the missing-dependency path, this is covered by unit tests
-            # in the JS module itself. The renderer gracefully handles init
-            # failure via try/catch.
-            pytest.skip("mathjax-full is installed (happy path; "
-                        "dependency failure tested via JS unit)")
+        is non-empty.  Runs even when mathjax is installed: copies
+        render_math.cjs to an isolated temp directory with no node_modules."""
+        import tempfile
+        import shutil
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Copy only render_math.cjs — no node_modules
+            dst = os.path.join(tmpdir, "render_math.cjs")
+            shutil.copy2(RENDER_SCRIPT, dst)
+
+            env = os.environ.copy()
+            env.pop("NODE_PATH", None)
+            # Prevent Node from finding modules in parent dirs
+            env["NODE_OPTIONS"] = "--no-deprecation"
+
+            proc = subprocess.run(
+                ["node", dst],
+                input="<p>$a$</p>",
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=tmpdir,
+                env=env,
+            )
+            assert proc.returncode != 0, (
+                f"Expected non-zero exit, got {proc.returncode}"
+            )
+            assert proc.stdout == "" or proc.stdout.strip() == "", (
+                f"Expected empty stdout, got: {proc.stdout[:200]}"
+            )
+            assert len(proc.stderr) > 0, (
+                "Expected non-empty stderr for missing module"
+            )
